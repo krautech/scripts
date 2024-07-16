@@ -294,7 +294,7 @@ while true; do
 			esac
 		done
 	else
-		options=("Install Prerequisites (GH, CartoTAP Repo, Config Moonraker)" "Check UUID" "Check Katapult Mode" "Flash Cartographer" "Quit")
+		options=("Install Prerequisites (GH, CartoTAP Repo, Config Moonraker)" "Check UUID" "Check Katapult Mode" "Flash Cartographer CANBUS ONLY" "Quit")
 		select opt in "${options[@]}"; do
 			case $REPLY in
 				1) install_pre; break ;;

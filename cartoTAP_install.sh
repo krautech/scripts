@@ -24,6 +24,7 @@ printf "Created by ${GREEN}KrauTech${NC} ${BLUE}(https://github.com/krautech)${N
 }
 header;
 saved_uuid=""
+
 disclaimer() {
 	echo "*************"
 	echo "* Attention *"
@@ -110,87 +111,32 @@ check_katapult(){
 	done
 }
 
-v2(){
-	echo "###################################################################################"
-	if [ -d ~/Carto_TAP/FW/V2 ]; then
-		cd ~/Carto_TAP/FW/V2
 
-		while true; do
-			options=("500k" "1M" "I Dont know")
-
-			echo "What is your CanBUS baudrate?"
-			select opt in "${options[@]}"; do
-				case $REPLY in
-					1) 500k; break ;;
-					2) 1m; break ;;
-					3) break 2 ;;
-					*) echo "What's that?" >&2
-				esac
-			done
-			echo "Are we done flashing v2?"
-			select opt in "Yes" "No"; do
-				case $REPLY in
-					1) break 2 ;;
-					2) break ;;
-					*) echo "Look, it's a simple question..." >&2
-				esac
-			done
-
-		done
-	else
-		echo "You do not have V2"
-	fi
-}
-
-v3(){
+probe(){
+	header;
 	echo "###################################################################################"
 	if [ -d ~/Carto_TAP/FW/V3 ]; then
 		cd ~/Carto_TAP/FW/V3
-
-		while true; do
-			options=("500k" "1M" "I Dont know")
-
-			echo "What is your CanBUS baudrate?"
-			select opt in "${options[@]}"; do
-				case $REPLY in
-					1) 500k; break ;;
-					2) 1m; break ;;
-					3) break 2 ;;
-					*) echo "What's that?" >&2
-				esac
-			done
-			echo "Are we done flashing v3?"
-			select opt in "Yes" "No"; do
-				case $REPLY in
-					1) break 2 ;;
-					2) break ;;
-					*) echo "Look, it's a simple question..." >&2
-				esac
-			done
-
-		done
 	else
-		echo "You do not have V3"
+		cd ~/Carto_TAP/FW/V2
 	fi
-}
-
-flash_probe(){
-	header;
-	echo "###################################################################################"
+	bitrate=$(ip -s -d link show can0 | grep -oP 'bitrate\s\K\w+')
 	while true; do
-		options=("V2" "V3" "I Dont Know")
-
-		echo "Which version of Cartographer do you have?"
+		options=("500k" "1M" "I Dont know")
+		printf "According to your HOST machine, your CanBus Bitrate is: ${RED}${bitrate}${NC}"
+		echo 
+		echo 
+		echo "What is your CanBUS bitrate?"
 		select opt in "${options[@]}"; do
 			case $REPLY in
-				1) v2; break ;;
-				2) v3; break ;;
-				3) exit; break ;;
+				1) 500k; break ;;
+				2) 1m; break ;;
+				3) break 2 ;;
 				*) echo "What's that?" >&2
 			esac
 		done
 		
-		echo "Are we done flashing firmware?"
+		echo "Are we done flashing your probe?"
 		select opt in "Yes" "No"; do
 			case $REPLY in
 				1) break 2 ;;
@@ -198,9 +144,7 @@ flash_probe(){
 				*) echo "Look, it's a simple question..." >&2
 			esac
 		done
-
 	done
-
 }
 
 check_flash(){
@@ -208,7 +152,7 @@ check_flash(){
 	options=("Yes" "No")
 		select opt in "${options[@]}"; do
 			case $REPLY in
-				1) flash_probe; break ;;
+				1) probe; break ;;
 				2) break ;;
 				*) echo "What's that?" >&2
 			esac
@@ -303,7 +247,7 @@ while true; do
 				1) install_pre; break ;;
 				2) check_uuid; break ;;
 				3) check_katapult; break ;;
-				4) flash_probe; break ;;
+				4) probe; break ;;
 				5) exit; break ;;
 				*) echo "What's that?" >&2
 			esac

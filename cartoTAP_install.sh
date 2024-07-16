@@ -147,6 +147,23 @@ check_katapult(){
 	check_flash;
 }
 
+check_dfu(){
+	header;
+	echo "###################################################################################"
+	echo "Checking device is in DFU Mode"
+	lsusb
+	echo 
+	echo
+	usbcheck=$(lsusb | grep -oP "FHD")
+	if [[ $usbcheck == "FHD" ]]; then
+		deviceid=$(lsusb | grep "FHD" | awk '{print $6}');
+		echo "Your Cartographer Device ID: "$deviceid
+		echo 
+		printf "${GREEN}YOUR DEVICE IS IN DFU MODE${NC}"
+		echo 
+	fi
+}
+
 500k(){
 	echo "###################################################################################"
 	options=("Yes Continue" "No")
@@ -210,6 +227,29 @@ probe(){
 	done
 }
 
+probe_dfu(){
+	header;
+	echo "###################################################################################"
+	if [ -d ~/Carto_TAP/FW/V3 ]; then
+		cd ~/Carto_TAP/FW/V3
+	else
+		cd ~/Carto_TAP/FW/V2
+	fi
+	
+	echo "###################################################################################"
+	wget https://apdm.tech/katapult_and_carto_can_1m_beta.bin
+	options=("Yes Continue" "No")
+	echo "Firmware File: katapult_and_carto_can_1m_beta.bin"
+	echo "Do you wish to proceed with flashing your cartographer probe using DFU Mode?"
+	select opt in "${options[@]}"; do
+		case $REPLY in
+			1) dfu-util -R -a 0 -s 0x08002000:leave -D katapult_and_carto_can_1m_beta.bin; break ;;
+			2) break 2 ;;
+			*) echo "What's that?" >&2
+		esac
+	done
+}
+
 check_flash(){
 	echo "Do you want to flash your probe?"
 	options=("Yes" "No")
@@ -230,31 +270,45 @@ while true; do
 	echo ""
 	echo ""
     echo "Choose an option:"
-	if [[ $saved_uuid == "" ]]; then
-		options=("Install Prerequisites (GH, CartoTAP Repo, Config Moonraker)" "Check UUID" "Check Katapult Mode" "Quit")
+	if [[ $saved_uuid == "" ]] && [[ $deviceid == "" ]]; then
+		options=("Install Prerequisites (GH, CartoTAP Repo, Config Moonraker)" "Check UUID" "Check Katapult Mode" "Check DFU Mode (EXPERIMENTAL)" "Quit")
 		select opt in "${options[@]}"; do
 			case $REPLY in
 				1) install_pre; break ;;
 				2) check_uuid; break ;;
 				3) check_katapult; break ;;
-				4) exit; break ;;
-				*) echo "What's that?" >&2
-			esac
-		done
-	else
-		options=("Install Prerequisites (GH, CartoTAP Repo, Config Moonraker)" "Check UUID" "Check Katapult Mode" "Flash Cartographer CANBUS ONLY - via Katapult" "Quit")
-		select opt in "${options[@]}"; do
-			case $REPLY in
-				1) install_pre; break ;;
-				2) check_uuid; break ;;
-				3) check_katapult; break ;;
-				4) probe; break ;;
+				4) check_dfu; break ;;
 				5) exit; break ;;
 				*) echo "What's that?" >&2
 			esac
 		done
+	elif [[ $deviceid != "" ]]; then
+		options=("Install Prerequisites (GH, CartoTAP Repo, Config Moonraker)" "Check UUID" "Check Katapult Mode" "Check DFU Mode (EXPERIMENTAL)" "Flash Cartographer CANBUS ONLY - via DFU" "Quit")
+		select opt in "${options[@]}"; do
+			case $REPLY in
+				1) install_pre; break ;;
+				2) check_uuid; break ;;
+				3) check_katapult; break ;;
+				4) check_dfu; break ;;
+				5) probe_dfu; break ;;
+				6) exit; break ;;
+				*) echo "What's that?" >&2
+			esac
+		done
+	elif [[ $saved_uuid != "" ]]; then
+		options=("Install Prerequisites (GH, CartoTAP Repo, Config Moonraker)" "Check UUID" "Check Katapult Mode" "Check DFU Mode (EXPERIMENTAL)" "Flash Cartographer CANBUS ONLY - via Katapult" "Quit")
+		select opt in "${options[@]}"; do
+			case $REPLY in
+				1) install_pre; break ;;
+				2) check_uuid; break ;;
+				3) check_katapult; break ;;
+				4) check_dfu; break ;;
+				5) probe; break ;;
+				6) exit; break ;;
+				*) echo "What's that?" >&2
+			esac
+		done
 	fi
-
 
 done
 

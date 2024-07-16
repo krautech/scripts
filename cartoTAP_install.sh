@@ -3,27 +3,26 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[1;36m'
 NC='\033[0m' # No Color
-clear
 ### Written by KrauTech (https://github.com/krautech)
 
 ### Credit to Esoterical (https://github.com/Esoterical)
 ### I used inspiration and snippet from his debugging script
 ### Thanks
-
+header(){
+	clear
 printf "${GREEN}
-
-
    ____                  _             _____      _      ____      ____    _____   _____      _    
   / ___|   __ _   _ __  | |_    ___   |_   _|    / \    |  _ \    | __ )  | ____| |_   _|    / \   
  | |      / _  | | '__| | __|  / _ \    | |     / _ \   | |_) |   |  _ \  |  _|     | |     / _ \  
  | |___  | (_| | | |    | |_  | (_) |   | |    / ___ \  |  __/    | |_) | | |___    | |    / ___ \ 
   \____|  \__,_| |_|     \__|  \___/    |_|   /_/   \_\ |_|       |____/  |_____|   |_|   /_/   \_\
-                                                                                                   
-
+																								   
 
 ${NC}"
 printf "${RED}BETA Script ${NC} v0.1\n"
 printf "Created by ${GREEN}KrauTech${NC} ${BLUE}(https://github.com/krautech)${NC}\n"
+}
+header;
 saved_uuid=""
 disclaimer() {
 	echo "*************"
@@ -53,32 +52,30 @@ disclaimer;
 echo ""
 echo ""
 check_uuid(){
+	header;
 	echo "###################################################################################"
 	echo "Please enter your cartographer UUID"
 	echo "found usually in your printer.cfg under [cartographer] or [scanner]"
-
+	echo 
+	echo "To go back: b"
+	echo
 	echo -n "UUID: "
 	read -r uuid
 	
-	echo "You Entered" $uuid
-	read -p "is this correct? y/n:" -n 1 -r
-	echo    # (optional) move to a new line
-	if [[ $REPLY =~ ^[Yy]$ ]]
-	then
+	if ! [[ $uuid == "b" ]]; then
 		checkuuid=$(python3 ~/katapult/scripts/flashtool.py -i can0 -u $uuid -r | grep -s "Flash Success")
 		if [[ $checkuuid == "Flash Success" ]]; then
 			echo "UUID Check: Success"
 		else
 			echo "UUID Check Failed: ${checkuuid}"
 		fi
-	else
-		check_uuid;
 	fi
 }
 
 
 
 check_katapult(){
+	header;
 	echo "###################################################################################"
 	echo "Checking device is in Katapult Mode"
 	~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0
@@ -127,7 +124,7 @@ v2(){
 					1) 500k; break ;;
 					2) 1m; break ;;
 					3) break 2 ;;
-					*) echo "What's that?" >&3
+					*) echo "What's that?" >&2
 				esac
 			done
 			echo "Are we done flashing v2?"
@@ -159,7 +156,7 @@ v3(){
 					1) 500k; break ;;
 					2) 1m; break ;;
 					3) break 2 ;;
-					*) echo "What's that?" >&3
+					*) echo "What's that?" >&2
 				esac
 			done
 			echo "Are we done flashing v3?"
@@ -178,6 +175,7 @@ v3(){
 }
 
 flash_probe(){
+	header;
 	echo "###################################################################################"
 	while true; do
 		options=("V2" "V3" "I Dont Know")
@@ -188,7 +186,7 @@ flash_probe(){
 				1) v2; break ;;
 				2) v3; break ;;
 				3) exit; break ;;
-				*) echo "What's that?" >&3
+				*) echo "What's that?" >&2
 			esac
 		done
 		
@@ -219,6 +217,7 @@ check_flash(){
 }
 
 install_pre(){
+	header;
 	cd ~
 	architecture=""
 	case $(uname -m) in
@@ -294,7 +293,7 @@ while true; do
 				2) check_uuid; break ;;
 				3) check_katapult; break ;;
 				4) exit; break ;;
-				*) echo "What's that?" >&4
+				*) echo "What's that?" >&2
 			esac
 		done
 	else
@@ -306,19 +305,12 @@ while true; do
 				3) check_katapult; break ;;
 				4) flash_probe; break ;;
 				5) exit; break ;;
-				*) echo "What's that?" >&5
+				*) echo "What's that?" >&2
 			esac
 		done
 	fi
 
-    echo "Are we done with this script?"
-    select opt in "Yes" "No"; do
-        case $REPLY in
-            1) break 2 ;;
-            2) break ;;
-            *) echo "Look, it's a simple question..." >&2
-        esac
-    done
+
 done
 
 

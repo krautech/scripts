@@ -1,12 +1,16 @@
 #!/bin/bash
 
-
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[1;36m'
+NC='\033[0m' # No Color
+clear
 ### Written by KrauTech (https://github.com/krautech)
 
 ### Credit to Esoterical (https://github.com/Esoterical)
 ### I used inspiration and snippet from his debugging script
 ### Thanks
-echo " 
+printf "${GREEN}
 
 
    ____                  _             _____      _      ____      ____    _____   _____      _    
@@ -17,15 +21,17 @@ echo "
                                                                                                    
 
 
-"
+${NC}"
+printf "${RED}BETA Pre-Setup Installer${NC} v0.1\n"
+printf "Created by ${GREEN}KrauTech${NC} ${BLUE}(https://github.com/krautech)${NC}\n"
 disclaimer() {
 	echo "*************"
 	echo "* Attention *"
 	echo "*************"
 	echo
-	echo "This script is designed to automatically install GitHub CLI"
+	echo "This script is designed to automatically install GitHub CLI, Pull Carto_TAP and setup moonraker"
 	echo "This script is available for review at: "
-	echo "https://github.com/krautech/scripts/blob/main/installgh.sh"
+	printf "${BLUE}https://github.com/krautech/scripts/blob/main/install_carto_tap.sh${NC}\n\n"
 	echo
 
 	while true; do

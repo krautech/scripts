@@ -23,6 +23,7 @@ printf "${GREEN}
 
 ${NC}"
 printf "${RED}CanBus Firmware Updater Script${NC} v0.1\n"
+printf "Created by ${GREEN}KrauTech${NC} ${BLUE}(https://github.com/krautech)${NC}\n"
 saved_uuid=""
 disclaimer() {
 	echo "*************"

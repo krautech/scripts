@@ -1,5 +1,12 @@
 #!/bin/bash
 
+
+### Written by KrauTech (https://github.com/krautech)
+
+### Credit to Esoterical (https://github.com/Esoterical)
+### I used inspiration and snippet from his debugging script
+### Thanks
+
 disclaimer() {
 	echo "*************"
 	echo "* Attention *"

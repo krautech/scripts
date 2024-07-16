@@ -22,7 +22,7 @@ printf "${GREEN}
 
 
 ${NC}"
-printf "${RED}CanBus Firmware Updater Script${NC} v0.1\n"
+printf "${RED}BETA Script ${NC} v0.1\n"
 printf "Created by ${GREEN}KrauTech${NC} ${BLUE}(https://github.com/krautech)${NC}\n"
 saved_uuid=""
 disclaimer() {
@@ -31,11 +31,12 @@ disclaimer() {
 	echo "*************"
 	echo
 	echo "This script is designed to update your firmware with the beta firmware."
+	echo "As well as install GH, Pull CartoTAP and Update Moonraker.conf"
 	echo ""
 	printf "${RED}USE AT YOUR OWN RISK${NC}"
 	echo ""
 	echo "This script is available for review at: "
-	printf "${BLUE}https://github.com/krautech/scripts/blob/main/cartoTAP_canbus_updater.sh${NC}\n\n"
+	printf "${BLUE}https://github.com/krautech/scripts/blob/main/cartoTAP_install.sh${NC}\n\n"
 	echo
 
 	while true; do

@@ -19,7 +19,7 @@ printf "${GREEN}
 																								   
 
 ${NC}"
-printf "${RED}BETA Script ${NC} v0.1\n"
+printf "${RED}BETA Script ${NC} v0.1.2\n"
 printf "Created by ${GREEN}KrauTech${NC} ${BLUE}(https://github.com/krautech)${NC}\n"
 }
 header;
@@ -144,7 +144,9 @@ check_katapult(){
 	echo "Checking device is in Katapult Mode"
 	~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0
 	saved_uuid=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=\K.*" | sed -e 's/, Application: CanBoot//g')
-	check_flash;
+	if [[ $saved_uuid != "" ]]; then
+		check_flash;
+	fi
 }
 
 check_dfu(){
@@ -154,12 +156,27 @@ check_dfu(){
 	lsusb
 	echo 
 	echo
-	usbcheck=$(lsusb | grep -oP "FHD")
-	if [[ $usbcheck == "FHD" ]]; then
-		deviceid=$(lsusb | grep "FHD" | awk '{print $6}');
+	dfucheck=$(lsusb | grep -oP "DFU Mode")
+	if [[ $dfucheck == "DFU Mode" ]]; then
+		deviceid=$(lsusb | grep "DFU Mode" | awk '{print $6}');
 		echo "Your Cartographer Device ID: "$deviceid
 		echo 
 		printf "${GREEN}YOUR DEVICE IS IN DFU MODE${NC}"
+		echo 
+	fi
+}
+
+check_usb(){
+	header;
+	echo "###################################################################################"
+	echo "Checking USB Device Serial ID"
+	lsusb
+	echo 
+	echo
+	usbcheck=$(ls -l /dev/serial/by-id/ | grep -oP "Cartographer")
+	if [[ $usbcheck == "Cartographer" ]]; then
+		usbid=$(ls -l /dev/serial/by-id/ | grep "Cartographer" | awk '{print $9}');
+		printf "Your Cartographer Device Serial ID: ${GREEN}${usbid}${NC}"
 		echo 
 	fi
 }
@@ -197,8 +214,13 @@ probe(){
 	echo "###################################################################################"
 	if [ -d ~/Carto_TAP/FW/V3 ]; then
 		cd ~/Carto_TAP/FW/V3
-	else
+	elif [ -d ~/Carto_TAP/FW/V2 ]; then
 		cd ~/Carto_TAP/FW/V2
+	elif [ -d ~/Carto_TAP/FW/V2-V3 ]; then
+		cd ~/Carto_TAP/FW/V2-V3
+	else
+		echo "You are missing Prerequisites. Please install them first."
+		break;
 	fi
 	bitrate=$(ip -s -d link show can0 | grep -oP 'bitrate\s\K\w+')
 	while true; do
@@ -232,11 +254,15 @@ probe_dfu(){
 	echo "###################################################################################"
 	if [ -d ~/Carto_TAP/FW/V3 ]; then
 		cd ~/Carto_TAP/FW/V3
-	else
+	elif [ -d ~/Carto_TAP/FW/V2 ]; then
 		cd ~/Carto_TAP/FW/V2
+	elif [ -d ~/Carto_TAP/FW/V2-V3 ]; then
+		cd ~/Carto_TAP/FW/V2-V3
+	else
+		echo "You are missing Prerequisites. Please install them first."
+		break ;
 	fi
 	
-	echo "###################################################################################"
 	wget https://apdm.tech/katapult_and_carto_can_1m_beta.bin
 	options=("Yes Continue" "No")
 	echo "Firmware File: katapult_and_carto_can_1m_beta.bin"
@@ -244,6 +270,35 @@ probe_dfu(){
 	select opt in "${options[@]}"; do
 		case $REPLY in
 			1) dfu-util -R -a 0 -s 0x08002000:leave -D katapult_and_carto_can_1m_beta.bin; break ;;
+			2) break 2 ;;
+			*) echo "What's that?" >&2
+		esac
+	done
+}
+
+probe_usb(){
+	header;
+	echo "###################################################################################"
+	options=("Yes Continue" "No")
+	echo "Firmware File: usb.bin"
+	echo "Do you wish to proceed with flashing your cartographer probe using USB Mode?"
+	select opt in "${options[@]}"; do
+		case $REPLY in
+			1) 	cd ~/klipper/scripts
+				~/klippy-env/bin/python -c 'import flash_usb as u; u.enter_bootloader("/dev/serial/by-id/${usbid}")'
+				katapultid=$(ls -l /dev/serial/by-id/ | grep "katapult" | awk '{print $9}');
+				if [ -d ~/Carto_TAP/FW/V3 ]; then
+					cd ~/Carto_TAP/FW/V3
+				elif [ -d ~/Carto_TAP/FW/V2 ]; then
+					cd ~/Carto_TAP/FW/V2
+				elif [ -d ~/Carto_TAP/FW/V2-V3 ]; then
+					cd ~/Carto_TAP/FW/V2-V3
+				else
+					echo "You are missing Prerequisites. Please install them first."
+					break ;
+				fi
+				~/klippy-env/bin/python ~/klipper/lib/canboot/flash_can.py -f usb.bin -d /dev/serial/by-id/$katapultid
+				break ;;
 			2) break 2 ;;
 			*) echo "What's that?" >&2
 		esac
@@ -270,41 +325,58 @@ while true; do
 	echo ""
 	echo ""
     echo "Choose an option:"
-	if [[ $saved_uuid == "" ]] && [[ $deviceid == "" ]]; then
-		options=("Install Prerequisites (GH, CartoTAP Repo, Config Moonraker)" "Check UUID" "Check Katapult Mode" "Check DFU Mode (EXPERIMENTAL)" "Quit")
+	if [[ $saved_uuid == "" ]] && [[ $deviceid == "" ]] && [[ $usbid == "" ]]; then
+		options=("Install Prerequisites (GH, CartoTAP Repo, Config Moonraker)" "Check UUID" "Check Katapult Mode" "Check DFU Mode" "Check USB Serial" "Quit")
 		select opt in "${options[@]}"; do
 			case $REPLY in
 				1) install_pre; break ;;
 				2) check_uuid; break ;;
 				3) check_katapult; break ;;
 				4) check_dfu; break ;;
-				5) exit; break ;;
+				5) check_usb; break ;;
+				6) exit; break ;;
 				*) echo "What's that?" >&2
 			esac
 		done
 	elif [[ $deviceid != "" ]]; then
-		options=("Install Prerequisites (GH, CartoTAP Repo, Config Moonraker)" "Check UUID" "Check Katapult Mode" "Check DFU Mode (EXPERIMENTAL)" "Flash Cartographer CANBUS ONLY - via DFU" "Quit")
+		options=("Install Prerequisites (GH, CartoTAP Repo, Config Moonraker)" "Check UUID" "Check Katapult Mode" "Check DFU Mode" "Check USB Serial" "Flash Cartographer CANBUS ONLY - via DFU" "Quit")
 		select opt in "${options[@]}"; do
 			case $REPLY in
 				1) install_pre; break ;;
 				2) check_uuid; break ;;
 				3) check_katapult; break ;;
 				4) check_dfu; break ;;
-				5) probe_dfu; break ;;
-				6) exit; break ;;
+				5) check_usb; break ;;
+				6) probe_dfu; break ;;
+				7) exit; break ;;
 				*) echo "What's that?" >&2
 			esac
 		done
 	elif [[ $saved_uuid != "" ]]; then
-		options=("Install Prerequisites (GH, CartoTAP Repo, Config Moonraker)" "Check UUID" "Check Katapult Mode" "Check DFU Mode (EXPERIMENTAL)" "Flash Cartographer CANBUS ONLY - via Katapult" "Quit")
+		options=("Install Prerequisites (GH, CartoTAP Repo, Config Moonraker)" "Check UUID" "Check Katapult Mode" "Check DFU Mode" "Check USB Serial"  "Flash Cartographer CANBUS ONLY - via Katapult" "Quit")
 		select opt in "${options[@]}"; do
 			case $REPLY in
 				1) install_pre; break ;;
 				2) check_uuid; break ;;
 				3) check_katapult; break ;;
 				4) check_dfu; break ;;
-				5) probe; break ;;
-				6) exit; break ;;
+				5) check_usb; break ;;
+				6) probe; break ;;
+				7) exit; break ;;
+				*) echo "What's that?" >&2
+			esac
+		done
+	elif [[ $usbid != "" ]]; then
+		options=("Install Prerequisites (GH, CartoTAP Repo, Config Moonraker)" "Check UUID" "Check Katapult Mode" "Check DFU Mode" "Check USB Serial" "Flash Cartographer USB" "Quit")
+		select opt in "${options[@]}"; do
+			case $REPLY in
+				1) install_pre; break ;;
+				2) check_uuid; break ;;
+				3) check_katapult; break ;;
+				4) check_dfu; break ;;
+				5) check_usb; break ;;
+				6) probe_usb; break ;;
+				7) exit; break ;;
 				*) echo "What's that?" >&2
 			esac
 		done

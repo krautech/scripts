@@ -281,6 +281,10 @@ install_pre(){
 
 while true; do
 	echo "###################################################################################"
+	echo ""
+	printf "${RED}FIRMWARE FLASH${NC} is available once you finish checking your UUID & Katapult Mode."
+	echo ""
+	echo ""
     echo "Choose an option:"
 	if [[ $saved_uuid == "" ]]; then
 		options=("Install Prerequisites (GH, CartoTAP Repo, Config Moonraker)" "Check UUID" "Check Katapult Mode" "Quit")

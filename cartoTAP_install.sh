@@ -52,6 +52,69 @@ disclaimer;
 
 echo ""
 echo ""
+
+install_pre(){
+	header;
+	cd ~
+	architecture=""
+	case $(uname -m) in
+		i386)   architecture="386" ;;
+		i686)   architecture="386" ;;
+		x86_64) architecture="amd64" ;;
+		arm)    dpkg --print-architecture | grep -q "arm64" && architecture="arm64" || architecture="arm" ;;
+	esac
+
+	check=$(command -v gh)
+	if ! [[ $check == "/usr/bin/gh" ]]; then
+		if [[ $architecture == "" ]]; then
+			arch=$(uname -m | sed 's/^aarch64$/arm64/')
+
+			if [[ $arch == "arm64" ]]; then
+				wget https://github.com/cli/cli/releases/download/v2.51.0/gh_2.51.0_linux_arm64.deb
+				sudo dpkg -i gh_2.51.0_linux_arm64.deb
+			else
+				wget https://github.com/cli/cli/releases/download/v2.51.0/gh_2.51.0_linux_armv6.deb
+				sudo dpkg -i gh_2.51.0_linux_armv6.deb
+			fi
+		else
+			wget https://github.com/cli/cli/releases/download/v2.51.0/gh_2.51.0_linux_armv6.deb
+			sudo dpkg -i gh_2.51.0_linux_armv6.deb
+		fi
+	fi
+
+	if grep -q "github.com" .config/gh/hosts.yml; then
+		cd ~
+		git clone https://github.com/Cartographer3D/Carto_TAP.git
+		./Carto_TAP/install.sh
+	else
+		echo $(gh auth login)
+		cd ~
+		git clone https://github.com/Cartographer3D/Carto_TAP.git
+		./Carto_TAP/install.sh
+	fi
+
+	cd ~
+	cd printer_data/config
+	if ! grep -q "CartographerSurveyBeta" moonraker.conf; then
+		echo "
+	[update_manager CartographerSurveyBeta]
+	type: git_repo
+	path: ~/Carto_TAP
+	origin: https://github.com/Cartographer3D/Carto_TAP.git
+	env: ~/klippy-env/bin/python
+	install_script: install.sh
+	is_system_service: False
+	managed_services: klipper
+	requirements: requirements.txt 
+	info_tags:
+	  desc=Cartographer Survey - BETA" >> moonraker.conf
+	else
+		echo "Moonraker is already configured for Cartographer Survey - BETA"
+	fi
+
+
+}
+
 check_uuid(){
 	header;
 	echo "###################################################################################"
@@ -157,68 +220,6 @@ check_flash(){
 				*) echo "What's that?" >&2
 			esac
 		done
-
-}
-
-install_pre(){
-	header;
-	cd ~
-	architecture=""
-	case $(uname -m) in
-		i386)   architecture="386" ;;
-		i686)   architecture="386" ;;
-		x86_64) architecture="amd64" ;;
-		arm)    dpkg --print-architecture | grep -q "arm64" && architecture="arm64" || architecture="arm" ;;
-	esac
-
-	check=$(command -v gh)
-	if ! [[ $check == "/usr/bin/gh" ]]; then
-		if [[ $architecture == "" ]]; then
-			arch=$(uname -m | sed 's/^aarch64$/arm64/')
-
-			if [[ $arch == "arm64" ]]; then
-				wget https://github.com/cli/cli/releases/download/v2.51.0/gh_2.51.0_linux_arm64.deb
-				sudo dpkg -i gh_2.51.0_linux_arm64.deb
-			else
-				wget https://github.com/cli/cli/releases/download/v2.51.0/gh_2.51.0_linux_armv6.deb
-				sudo dpkg -i gh_2.51.0_linux_armv6.deb
-			fi
-		else
-			wget https://github.com/cli/cli/releases/download/v2.51.0/gh_2.51.0_linux_armv6.deb
-			sudo dpkg -i gh_2.51.0_linux_armv6.deb
-		fi
-	fi
-
-	if grep -q "github.com" .config/gh/hosts.yml; then
-		cd ~
-		git clone https://github.com/Cartographer3D/Carto_TAP.git
-		./Carto_TAP/install.sh
-	else
-		echo $(gh auth login)
-		cd ~
-		git clone https://github.com/Cartographer3D/Carto_TAP.git
-		./Carto_TAP/install.sh
-	fi
-
-	cd ~
-	cd printer_data/config
-	if ! grep -q "CartographerSurveyBeta" moonraker.conf; then
-		echo "
-	[update_manager CartographerSurveyBeta]
-	type: git_repo
-	path: ~/Carto_TAP
-	origin: https://github.com/Cartographer3D/Carto_TAP.git
-	env: ~/klippy-env/bin/python
-	install_script: install.sh
-	is_system_service: False
-	managed_services: klipper
-	requirements: requirements.txt 
-	info_tags:
-	  desc=Cartographer Survey - BETA" >> moonraker.conf
-	else
-		echo "Moonraker is already configured for Cartographer Survey - BETA"
-	fi
-
 
 }
 

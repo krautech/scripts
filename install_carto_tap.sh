@@ -6,7 +6,16 @@
 ### Credit to Esoterical (https://github.com/Esoterical)
 ### I used inspiration and snippet from his debugging script
 ### Thanks
+echo " 
 
+   ____                  _     _____      _      ____      ____    _____   _____      _    
+  / ___|   __ _   _ __  | |_  |_   _|    / \    |  _ \    | __ )  | ____| |_   _|    / \   
+ | |      / _  | | '__| | __|   | |     / _ \   | |_) |   |  _ \  |  _|     | |     / _ \  
+ | |___  | (_| | | |    | |_    | |    / ___ \  |  __/    | |_) | | |___    | |    / ___ \ 
+  \____|  \__,_| |_|     \__|   |_|   /_/   \_\ |_|       |____/  |_____|   |_|   /_/   \_\
+
+
+"
 disclaimer() {
 	echo "*************"
 	echo "* Attention *"

@@ -7,6 +7,16 @@
 ### I used inspiration and snippet from his debugging script
 ### Thanks
 
+echo " 
+
+   ____                  _     _____      _      ____      ____    _____   _____      _    
+  / ___|   __ _   _ __  | |_  |_   _|    / \    |  _ \    | __ )  | ____| |_   _|    / \   
+ | |      / _  | | '__| | __|   | |     / _ \   | |_) |   |  _ \  |  _|     | |     / _ \  
+ | |___  | (_| | | |    | |_    | |    / ___ \  |  __/    | |_) | | |___    | |    / ___ \ 
+  \____|  \__,_| |_|     \__|   |_|   /_/   \_\ |_|       |____/  |_____|   |_|   /_/   \_\
+
+
+"
 disclaimer() {
 	echo "*************"
 	echo "* Attention *"
@@ -27,18 +37,36 @@ disclaimer() {
 	done
 }
 
+cd ~
 
-### disclaimer;
-qlen=$(ip -s -d link show can0 | grep -oP 'qlen\s\K\w+')
-bitrate=$(ip -s -d link show can0 | grep -oP 'bitrate\s\K\w+')
+enterUUID(){
+	echo "###################################################################################"
+	echo "Please enter your cartographer UUID"
+	echo "found usually in your printer.cfg under [cartographer] or [scanner]"
 
-echo "Queuelength:" $qlen
-echo "Bitrate:" $bitrate
+	echo -n "UUID: "
+	read -r uuid
+}
 
-if [[ $qlen == "1024" ]]; then
-	if [[ $bitrate == "1000000" ]]; then
-		echo "Script Complete"
-	fi
+enterUUID;
+
+echo "You Entered" $uuid
+read -p "is this correct? y/n:" -n 1 -r
+echo    # (optional) move to a new line
+if [[ $REPLY =~ ^[Yy]$ ]]
+then
+    # do dangerous stuff
+	echo "
+	
+	
+	
+	
+	
+	
+	
+	"
+	echo $uuid
 else
-	echo "Script FAILED"
+	enterUUID;
 fi
+

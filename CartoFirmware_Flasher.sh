@@ -56,6 +56,7 @@ header;
 saved_uuid=""
 
 disclaimer() {
+	# Show Disclaimer FUNCTION
 	echo "******************************************************************"
 	echo "* Attention *"
 	echo "******************************************************************"
@@ -79,6 +80,7 @@ disclaimer() {
 }
 
 menu(){
+	# Show the Main Menu FUNCTION
 	header;
 	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]] || [[ $dfuID != "" ]] || [[ $usbID != "" ]]; then
 		echo -ne "$(ColorGreen 'Device Found for Flashing')\n"
@@ -124,6 +126,7 @@ menu(){
 }
 
 initialChecks(){
+	# Begin Checking For Devices FUNCTION
 	header;
 	echo "Running Checks for Cartographer Devices in Katapult Mode, DFU or USB"
 	echo 
@@ -160,11 +163,14 @@ initialChecks(){
 }
 
 installPre(){
+	# Installs all needed files FUNCTION
 	header;
 	echo "Installing all necessary components.."
 	echo 
 	cd ~
+	# Check for Katapult installation
 	if [ ! -d ~/katapult ]; then
+		# Pull & Install Katapult
 		test -e ~/katapult && (cd ~/katapult && git pull) || (cd ~ && git clone https://github.com/Arksine/katapult) ; cd ~
 		if [ -d ~/katapult ]; then
 			printf "${GREEN}Katapult was SUCCESSFULLY installed.${NC}\n\n"
@@ -175,9 +181,12 @@ installPre(){
 		echo "Katapult is already installed"
 		echo
 	fi
+	# Check for Cartographer-Klipper installation
 	if [ ! -d ~/cartographer-klipper ]; then
+		# Pull Cartographer-Klipper
 		test -e ~/cartographer-klipper && (cd ~/cartographer-klipper && git pull) || (cd ~ && git clone https://github.com/Cartographer3D/cartographer-klipper.git) ; cd ~
 		if [ -d ~/cartographer-klipper ]; then
+			# Install Cartographer-Klipper
 			chmod +x cartographer-klipper/install.sh
 			./cartographer-klipper/install.sh
 			printf "${GREEN}Cartographer-Klipper was SUCCESSFULLY installed.${NC}\n\n"
@@ -192,6 +201,7 @@ installPre(){
 	read -p "Press enter to continue"
 }
 checkUUID(){
+	# Checks Users UUID and Put Device into Katapult Mode
 	header;
 	echo "Please enter your cartographer UUID"
 	echo "found usually in your printer.cfg under [cartographer] or [scanner]"
@@ -201,7 +211,9 @@ checkUUID(){
 	echo -n "UUID: "
 	read -r uuid
 	
+	# If user entered a valid UUID
 	if ! [[ $uuid == "b" ]]; then
+		# Check If UUID is valid and puts device into Katapult Mode
 		checkuuid=$(python3 ~/katapult/scripts/flashtool.py -i can0 -u $uuid -r | grep -s "Flash Success")
 		if [[ $checkuuid == "Flash Success" ]]; then
 			printf "UUID Check: ${GREEN}Success & Entered Katapult Mode${NC}\n"
@@ -216,7 +228,9 @@ checkUUID(){
 }
 
 flashFirmware(){
+	# List Firmware for Found Device FUNCTION
 	header;
+	# If found device is Katapult
 	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
 		printf "${BLUE}Flashing via ${GREEN}KATAPULT${NC}\n\n"
 		cd ~/cartographer-klipper/firmware/v3
@@ -241,6 +255,7 @@ flashFirmware(){
 			esac
 		done
 	fi
+	# If found device is DFU
 	if [[ $dfuID != "" ]]; then
 		printf "${BLUE}Flashing via ${GREEN}DFU${NC}\n\n"
 		cd ~/cartographer-klipper/firmware/v3/'DEPLOYER FRIMWARE - DFU MODE ONLY NOT KATAPULT'
@@ -265,6 +280,7 @@ flashFirmware(){
 			esac
 		done
 	fi
+	# If found device is USB
 	if [[ $usbID != "" ]]; then
 		printf "${BLUE}Flashing via ${GREEN}USB${NC}\n\n"
 		cd ~/cartographer-klipper/firmware/v3
@@ -295,6 +311,8 @@ flashFirmware(){
 }
 
 flashing(){
+	# Flash Device FUNCTION
+	header;
 	cd ~/cartographer-klipper/firmware/v3
 	firmwareFile=$(echo "$1" | sed 's|./||g')
 	if [[ $canbootID != "" ]]; then
@@ -304,17 +322,24 @@ flashing(){
 		uuid=$katapultID
 	fi
 	echo "DUMMY FLASHED with $firmwareFile"
+	
+	# Check if Katapult
 	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
+		# Flash Katapult Firmware
 		#python3 ~/katapult/scripts/flash_can.py -i can0 -f $firmwareFile -u $uuid;
 		echo
 	fi
 	
+	# Check if DFU
 	if [[ $dfuID != "" ]]; then
+		# Flash DFU Firmware
 		#dfu-util -R -a 0 -s 0x08000000:leave -D $firmwareFile
 		echo
 	fi
 	
+	# Check if USB
 	if [[ $usbID != "" ]]; then
+		# FLash USB Firmware
 		cd ~/klipper/scripts
 		#~/klippy-env/bin/python -c 'import flash_usb as u; u.enter_bootloader("/dev/serial/by-id/${usbID}")'
 		flashID=$(ls -l /dev/serial/by-id/ | grep "katapult" | awk '{print $9}');

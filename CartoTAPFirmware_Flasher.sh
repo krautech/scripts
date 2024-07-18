@@ -326,8 +326,9 @@ flashFirmware(){
 	# If found device is DFU
 	if [[ $dfuID != "" ]]; then
 		printf "${BLUE}Flashing via ${GREEN}DFU${NC}\n\n"
-		cd ~/Carto_TAP/FW/V2-V3
+		cd ~/Carto_TAP
 		git pull > /dev/null 2>&1
+		cd ~/Carto_TAP/FW/V2-V3
 		DIRECTORY=.
 		unset options i
 		while IFS= read -r -d $'\0' f; do
@@ -351,8 +352,9 @@ flashFirmware(){
 	# If found device is USB
 	if [[ $usbID != "" ]]; then
 		printf "${BLUE}Flashing via ${GREEN}USB${NC}\n\n"
-		cd ~/Carto_TAP/FW/V2-V3
+		cd ~/Carto_TAP
 		git pull > /dev/null 2>&1
+		cd ~/Carto_TAP/FW/V2-V3
 		DIRECTORY=.
 		unset options i
 		while IFS= read -r -d $'\0' f; do

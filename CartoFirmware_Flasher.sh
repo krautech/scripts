@@ -235,8 +235,9 @@ flashFirmware(){
 	# If found device is Katapult
 	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
 		printf "${BLUE}Flashing via ${GREEN}KATAPULT${NC}\n\n"
-		cd ~/cartographer-klipper/firmware/v3
+		cd ~/cartographer-klipper
 		git pull > /dev/null 2>&1
+		cd ~/cartographer-klipper/firmware/v3
 		DIRECTORY=.
 		unset options i
 		while IFS= read -r -d $'\0' f; do
@@ -260,8 +261,9 @@ flashFirmware(){
 	# If found device is DFU
 	if [[ $dfuID != "" ]]; then
 		printf "${BLUE}Flashing via ${GREEN}DFU${NC}\n\n"
-		cd ~/cartographer-klipper/firmware/v3/'DEPLOYER FRIMWARE - DFU MODE ONLY NOT KATAPULT'
+		cd ~/cartographer-klipper
 		git pull > /dev/null 2>&1
+		cd ~/cartographer-klipper/firmware/v3/'DEPLOYER FRIMWARE - DFU MODE ONLY NOT KATAPULT'
 		DIRECTORY=.
 		unset options i
 		while IFS= read -r -d $'\0' f; do
@@ -285,8 +287,9 @@ flashFirmware(){
 	# If found device is USB
 	if [[ $usbID != "" ]]; then
 		printf "${BLUE}Flashing via ${GREEN}USB${NC}\n\n"
-		cd ~/cartographer-klipper/firmware/v3
+		cd ~/cartographer-klipper
 		git pull > /dev/null 2>&1
+		cd ~/cartographer-klipper/firmware/v3
 		DIRECTORY=.
 		unset options i
 		while IFS= read -r -d $'\0' f; do

@@ -351,7 +351,7 @@ flashing(){
 			echo "You are missing firmware files. Please pull them from github first."
 			break ;
 		fi
-		~/klippy-env/bin/python ~/klipper/lib/canboot/flash_can.py -f usb.bin -d /dev/serial/by-id/$flashID
+		~/klippy-env/bin/python ~/klipper/lib/canboot/flash_can.py -f $firmwareFile -d /dev/serial/by-id/$flashID
 	fi
 	flashed="1"
 	read -p "Press enter to continue"

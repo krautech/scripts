@@ -60,12 +60,12 @@ disclaimer() {
 	echo "* Attention *"
 	echo "******************************************************************"
 	echo
-	echo "This script is designed to update your firmware via DFU with Katapult + Cartographer 1M Canbus"
+	echo "This script is designed to update your firmware via Katapult/DFU/USB"
 	echo ""
 	printf "${RED}USE AT YOUR OWN RISK${NC}"
 	echo ""
 	echo "This script is available for review at: "
-	printf "${BLUE}https://github.com/krautech/scripts/blob/main/CartoFirmware_Updater.sh${NC}\n\n"
+	printf "${BLUE}https://github.com/krautech/scripts/blob/main/CartoFirmware_Flasher.sh${NC}\n\n"
 	echo
 
 	while true; do

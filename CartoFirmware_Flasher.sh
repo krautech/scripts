@@ -38,12 +38,14 @@ ColorYellow(){
 header(){
 clear
 printf "${GREEN}
-   ____                  _             _____      _      ____   
-  / ___|   __ _   _ __  | |_    ___   |_   _|    / \    |  _ \    
- | |      / _  | | '__| | __|  / _ \    | |     / _ \   | |_) | 
- | |___  | (_| | | |    | |_  | (_) |   | |    / ___ \  |  __/ 
-  \____|  \__,_| |_|     \__|  \___/    |_|   /_/   \_\ |_|    
- 
+
+
+   ____                  _                                            _                   
+  / ___|   __ _   _ __  | |_    ___     __ _   _ __    __ _   _ __   | |__     ___   _ __ 
+ | |      / _  | | '__| | __|  / _ \   / _  | | '__|  / _  | | '_ \  | '_ \   / _ \ | '__|
+ | |___  | (_| | | |    | |_  | (_) | | (_| | | |    | (_| | | |_) | | | | | |  __/ | |   
+  \____|  \__,_| |_|     \__|  \___/   \__, | |_|     \__,_| | .__/  |_| |_|  \___| |_|   
+                                       |___/                 |_|                          
 
 ${NC}"
 printf "${RED}Firmware Flasher Script ${NC} v0.1.2\n"
@@ -326,14 +328,14 @@ flashing(){
 	# Check if Katapult
 	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
 		# Flash Katapult Firmware
-		#python3 ~/katapult/scripts/flash_can.py -i can0 -f $firmwareFile -u $uuid;
+		python3 ~/katapult/scripts/flash_can.py -i can0 -f $firmwareFile -u $uuid;
 		echo
 	fi
 	
 	# Check if DFU
 	if [[ $dfuID != "" ]]; then
 		# Flash DFU Firmware
-		#dfu-util -R -a 0 -s 0x08000000:leave -D $firmwareFile
+		dfu-util -R -a 0 -s 0x08000000:leave -D $firmwareFile
 		echo
 	fi
 	
@@ -341,7 +343,7 @@ flashing(){
 	if [[ $usbID != "" ]]; then
 		# FLash USB Firmware
 		cd ~/klipper/scripts
-		#~/klippy-env/bin/python -c 'import flash_usb as u; u.enter_bootloader("/dev/serial/by-id/${usbID}")'
+		~/klippy-env/bin/python -c 'import flash_usb as u; u.enter_bootloader("/dev/serial/by-id/${usbID}")'
 		flashID=$(ls -l /dev/serial/by-id/ | grep "katapult" | awk '{print $9}');
 		if [ -d ~/cartographer-klipper/firmware/v3 ]; then
 			cd ~/cartographer-klipper/firmware/v3
@@ -349,7 +351,7 @@ flashing(){
 			echo "You are missing firmware files. Please pull them from github first."
 			break ;
 		fi
-		#~/klippy-env/bin/python ~/klipper/lib/canboot/flash_can.py -f usb.bin -d /dev/serial/by-id/$flashID
+		~/klippy-env/bin/python ~/klipper/lib/canboot/flash_can.py -f usb.bin -d /dev/serial/by-id/$flashID
 	fi
 	flashed="1"
 	read -p "Press enter to continue"

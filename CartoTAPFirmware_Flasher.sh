@@ -305,6 +305,9 @@ flashFirmware(){
 	# List Firmware for Found Device FUNCTION
 	header;
 	echo "Pick which firmware you want to install, if unsure ask on discord (https://discord.gg/yzazQMEGS2)"
+	echo
+	bitrate=$(ip -s -d link show can0 | grep -oP 'bitrate\s\K\w+')
+	echo "Your Host CANBus is configured at ${RED}Bitrate: $bitrate"
 	echo 
 	# If found device is Katapult
 	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then

@@ -8,7 +8,7 @@ NC='\033[0m' # No Color
 ### Credit to Esoterical (https://github.com/Esoterical)
 ### I used inspiration and snippet from his debugging script
 ### Thanks
-#sudo service klipper stop
+sudo service klipper stop
 
 
 ##
@@ -119,11 +119,12 @@ menu(){
 	    3) checkUUID ; menu ;;
 		4) flashFirmware ; menu ;;
 	    5) all_checks ; menu ;;
-		"q") exit 0 ;;
+		"q") sudo service klipper start; exit; 0 ;;
 		"r") 
 		if [[ $flashed == "1" ]]; then
 			reboot; exit;
 		else
+			sudo service klipper start;
 			exit;
 		fi
 		exit ;;
@@ -307,18 +308,26 @@ flashFirmware(){
 	echo "Pick which firmware you want to install, if unsure ask on discord (https://discord.gg/yzazQMEGS2)"
 	echo
 	bitrate=$(ip -s -d link show can0 | grep -oP 'bitrate\s\K\w+')
-	echo "Your Host CANBus is configured at ${RED}Bitrate: $bitrate"
+	printf "Your Host CANBus is configured at ${RED}Bitrate: $bitrate"
 	echo 
 	# If found device is Katapult
 	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
 		printf "${BLUE}Flashing via ${GREEN}KATAPULT${NC}\n\n"
 		cd ~/Carto_TAP/FW/V2-V3
 		git pull > /dev/null 2>&1
-		DIRECTORY=.
-		unset options i
-		while IFS= read -r -d $'\0' f; do
-		  options[i++]="$f"
-		done < <(find $DIRECTORY -maxdepth 1 -type f -name "*.bin" -print0 )
+		if [[ $bitrate == "1000000" ]]; then
+			DIRECTORY=.
+			unset options i
+			while IFS= read -r -d $'\0' f; do
+			  options[i++]="$f"
+			done < <(find $DIRECTORY -maxdepth 1 -type f \( -name '*1m*' -o -name 'usb.bin' \) -print0)
+		elif [[ $bitrate == "500000" ]]; then
+			DIRECTORY=.
+			unset options i
+			while IFS= read -r -d $'\0' f; do
+			  options[i++]="$f"
+			done < <(find $DIRECTORY -maxdepth 1 -type f \( -name 'usb.bin' -o -name '500k.bin' \) -print0)
+		fi
 		COLUMNS=12
 		select opt in "${options[@]}" "Back"; do
 			case $opt in
@@ -342,9 +351,10 @@ flashFirmware(){
 		cd ~/Carto_TAP/FW/V2-V3
 		DIRECTORY=.
 		unset options i
+		declare -A arr
 		while IFS= read -r -d $'\0' f; do
 		  options[i++]="$f"
-		done < <(find $DIRECTORY -maxdepth 1 -type f -name "*.bin" -print0 )
+		done < <(find $DIRECTORY -maxdepth 1 -type f -name "*.bin" -print0)
 		COLUMNS=12
 		select opt in "${options[@]}" "Back"; do
 			case $opt in
@@ -402,7 +412,7 @@ flashing(){
 	if [[ $katapultID != "" ]]; then
 		uuid=$katapultID
 	fi
-	echo "DUMMY FLASHED with $firmwareFile"
+	echo "FLASHED with $firmwareFile"
 	
 	# Check if Katapult
 	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
@@ -416,7 +426,7 @@ flashing(){
 	# Check if DFU
 	if [[ $dfuID != "" ]]; then
 		# Flash DFU Firmware
-		dfu-util -R -a 0 -s 0x08000000:leave -D $firmwareFile
+		sudo dfu-util -R -a 0 -s 0x08000000:leave -D $firmwareFile
 		dfuID=""
 		echo
 	fi

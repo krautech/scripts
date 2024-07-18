@@ -181,21 +181,89 @@ installPre(){
 		echo "Katapult is already installed"
 		echo
 	fi
-	# Check for Carto_TAP installation
-	if [ ! -d ~/Carto_TAP ]; then
-		# Pull Carto_TAP
-		test -e ~/Carto_TAP && (cd ~/Carto_TAP && git pull) || (cd ~ && git clone https://github.com/Cartographer3D/Carto_TAP.git) ; cd ~
-		if [ -d ~/Carto_TAP ]; then
-			# Install Cartographer-Klipper
-			chmod +x Carto_TAP/install.sh
-			./Carto_TAP/install.sh
-			printf "${GREEN}Carto_TAP was SUCCESSFULLY installed.${NC}\n\n"
+	
+	architecture=""
+	case $(uname -m) in
+		i386)   architecture="386" ;;
+		i686)   architecture="386" ;;
+		x86_64) architecture="amd64" ;;
+		arm)    dpkg --print-architecture | grep -q "arm64" && architecture="arm64" || architecture="arm" ;;
+	esac
+
+	check=$(command -v gh)
+	if ! [[ $check == "/usr/bin/gh" ]]; then
+		if [[ $architecture == "" ]]; then
+			arch=$(uname -m | sed 's/^aarch64$/arm64/')
+
+			if [[ $arch == "arm64" ]]; then
+				wget https://github.com/cli/cli/releases/download/v2.51.0/gh_2.51.0_linux_arm64.deb
+				sudo dpkg -i gh_2.51.0_linux_arm64.deb
+			else
+				wget https://github.com/cli/cli/releases/download/v2.51.0/gh_2.51.0_linux_armv6.deb
+				sudo dpkg -i gh_2.51.0_linux_armv6.deb
+			fi
 		else
-			printf "${RED}Carto_TAP FAILED to install$.{NC}\n\n"
+			wget https://github.com/cli/cli/releases/download/v2.51.0/gh_2.51.0_linux_armv6.deb
+			sudo dpkg -i gh_2.51.0_linux_armv6.deb
 		fi
-	else 
-		echo "Carto_TAP is already installed"
-		echo
+	fi
+
+	if grep -q "github.com" .config/gh/hosts.yml; then
+		cd ~
+			# Check for Carto_TAP installation
+		if [ ! -d ~/Carto_TAP ]; then
+			# Pull Carto_TAP
+			test -e ~/Carto_TAP && (cd ~/Carto_TAP && git pull) || (cd ~ && git clone https://github.com/Cartographer3D/Carto_TAP.git) ; cd ~
+			if [ -d ~/Carto_TAP ]; then
+				# Install Cartographer-Klipper
+				chmod +x Carto_TAP/install.sh
+				./Carto_TAP/install.sh
+				printf "${GREEN}Carto_TAP was SUCCESSFULLY installed.${NC}\n\n"
+			else
+				printf "${RED}Carto_TAP FAILED to install$.{NC}\n\n"
+			fi
+		else 
+			echo "Carto_TAP is already installed"
+			echo
+		fi
+	else
+		echo $(gh auth login)
+		cd ~
+		# Check for Carto_TAP installation
+		if [ ! -d ~/Carto_TAP ]; then
+			# Pull Carto_TAP
+			test -e ~/Carto_TAP && (cd ~/Carto_TAP && git pull) || (cd ~ && git clone https://github.com/Cartographer3D/Carto_TAP.git) ; cd ~
+			if [ -d ~/Carto_TAP ]; then
+				# Install Cartographer-Klipper
+				chmod +x Carto_TAP/install.sh
+				./Carto_TAP/install.sh
+				printf "${GREEN}Carto_TAP was SUCCESSFULLY installed.${NC}\n\n"
+			else
+				printf "${RED}Carto_TAP FAILED to install$.{NC}\n\n"
+			fi
+		else 
+			echo "Carto_TAP is already installed"
+			echo
+		fi
+	fi
+
+	cd ~
+	cd printer_data/config
+	if ! grep -q "CartographerSurveyBeta" moonraker.conf; then
+		echo "
+	[update_manager CartographerSurveyBeta]
+	type: git_repo
+	path: ~/Carto_TAP
+	origin: https://github.com/Cartographer3D/Carto_TAP.git
+	env: ~/klippy-env/bin/python
+	install_script: install.sh
+	is_system_service: False
+	managed_services: klipper
+	requirements: requirements.txt 
+	info_tags:
+	  desc=Cartographer Survey - BETA" >> moonraker.conf
+	else
+		echo "Moonraker is already configured for Cartographer Survey - BETA"
 	fi
 		
 	read -p "Press enter to continue"

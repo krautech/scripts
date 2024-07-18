@@ -340,6 +340,8 @@ flashing(){
 	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
 		# Flash Katapult Firmware
 		python3 ~/katapult/scripts/flash_can.py -i can0 -f $firmwareFile -u $uuid;
+		canbootID=""
+		katapultID=""
 		echo
 	fi
 	
@@ -347,6 +349,7 @@ flashing(){
 	if [[ $dfuID != "" ]]; then
 		# Flash DFU Firmware
 		dfu-util -R -a 0 -s 0x08000000:leave -D $firmwareFile
+		dfuID=""
 		echo
 	fi
 	
@@ -363,6 +366,7 @@ flashing(){
 			break ;
 		fi
 		~/klippy-env/bin/python ~/klipper/lib/canboot/flash_can.py -f $firmwareFile -d /dev/serial/by-id/$flashID
+		usbID=""
 	fi
 	flashed="1"
 	read -p "Press enter to continue"

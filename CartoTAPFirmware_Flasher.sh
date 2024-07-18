@@ -82,8 +82,14 @@ disclaimer() {
 menu(){
 	# Show the Main Menu FUNCTION
 	header;
-	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]] || [[ $dfuID != "" ]] || [[ $usbID != "" ]]; then
-		echo -ne "$(ColorGreen 'Device Found for Flashing')\n"
+	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
+		echo -ne "$(ColorGreen 'Katapult Device Found for Flashing')\n"
+	fi
+	if [[ $dfuID != "" ]]; then
+		echo -ne "$(ColorGreen 'DFU Device Found for Flashing')\n"
+	fi
+	if [[ $usbID != "" ]]; then
+		echo -ne "$(ColorGreen 'USB Device Found for Flashing')\n"
 	fi
 	echo -ne "
 			$(ColorYellow '1)') Install Prerequisites\n
@@ -298,6 +304,8 @@ checkUUID(){
 flashFirmware(){
 	# List Firmware for Found Device FUNCTION
 	header;
+	echo "Pick which firmware you want to install, if unsure ask on discord (https://discord.gg/yzazQMEGS2)"
+	echo 
 	# If found device is Katapult
 	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
 		printf "${BLUE}Flashing via ${GREEN}KATAPULT${NC}\n\n"
@@ -307,11 +315,11 @@ flashFirmware(){
 		unset options i
 		while IFS= read -r -d $'\0' f; do
 		  options[i++]="$f"
-		done < <(find $DIRECTORY -maxdepth 1 -type f -name "*" -print0 )
+		done < <(find $DIRECTORY -maxdepth 1 -type f -name "*.bin" -print0 )
 		COLUMNS=12
 		select opt in "${options[@]}" "Back"; do
 			case $opt in
-				*)
+				*.bin)
 					flashing $opt;
 					;;
 				"Back")
@@ -333,11 +341,11 @@ flashFirmware(){
 		unset options i
 		while IFS= read -r -d $'\0' f; do
 		  options[i++]="$f"
-		done < <(find $DIRECTORY -maxdepth 1 -type f -name "*" -print0 )
+		done < <(find $DIRECTORY -maxdepth 1 -type f -name "*.bin" -print0 )
 		COLUMNS=12
 		select opt in "${options[@]}" "Back"; do
 			case $opt in
-				*)
+				*.bin)
 					flashing $opt;
 					;;
 				"Back")
@@ -359,11 +367,11 @@ flashFirmware(){
 		unset options i
 		while IFS= read -r -d $'\0' f; do
 		  options[i++]="$f"
-		done < <(find $DIRECTORY -maxdepth 1 -type f -name "*" -print0 )
+		done < <(find $DIRECTORY -maxdepth 1 -type f -name "*.bin" -print0 )
 		COLUMNS=12
 		select opt in "${options[@]}" "Back"; do
 			case $opt in
-				*)
+				*.bin)
 					flashing $opt;
 					;;
 				"Back")

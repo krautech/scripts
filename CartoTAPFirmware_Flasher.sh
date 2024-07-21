@@ -8,14 +8,14 @@ NC='\033[0m' # No Color
 ### Credit to Esoterical (https://github.com/Esoterical)
 ### I used inspiration and snippet from his debugging script
 ### Thanks
-sudo service klipper stop
+systemctl stop klipper
 
 
 ##
 # Color  Variables
 ##
-red='\e\r[31m'
-green='\e\r[32m'
+red='\r\033[31m'
+green='\r\033[32m'
 blue='\r\033[1;36m'
 yellow='\r\033[1;33m'
 clear='\e[0m'
@@ -46,7 +46,7 @@ printf "${BLUE}
 																								   
 
 ${NC}"
-printf "${RED}Beta Firmware Flasher Script ${NC} v0.1.1\n"
+printf "${RED}Beta Firmware Flasher Script ${NC} v0.1.3\n"
 printf "Created by ${GREEN}KrauTech${NC} ${BLUE}(https://github.com/krautech)${NC}\n"
 echo
 echo
@@ -100,15 +100,9 @@ menu(){
 		echo -ne "
 			$(ColorBlue '4)') Flash Firmware "
 	fi
-	if [[ $flashed == "1" ]]; then
-		echo -ne "\n
-			$(ColorRed 'R)') Reboot & Exit"
-		echo -ne "\n
-			$(ColorRed 'Q)') Exit without Rebooting"
-	else
-		echo -ne "\n
-			$(ColorRed 'Q)') Exit"
-	fi
+	echo -ne "\n	
+		$(ColorRed 'R)') Reboot
+		$(ColorRed 'Q)') Exit without Rebooting\n"
 	echo -ne "\n	
 		$(ColorBlue 'Choose an option:') "
     read a
@@ -119,15 +113,8 @@ menu(){
 	    3) checkUUID ; menu ;;
 		4) flashFirmware ; menu ;;
 	    5) all_checks ; menu ;;
-		"q") sudo service klipper start; exit; 0 ;;
-		"r") 
-		if [[ $flashed == "1" ]]; then
-			reboot; exit;
-		else
-			sudo service klipper start;
-			exit;
-		fi
-		exit ;;
+		"q") systemctl start klipper; exit;;
+		"r") reboot; exit;;
 		*) echo -e $red"Wrong option."$clear;;
     esac
 }
@@ -156,6 +143,7 @@ initialChecks(){
 	if [[ $dfuCheck == "DFU Mode" ]]; then
 		# Save DFU Device ID
 		dfuID=$(lsusb | grep "DFU Mode" | awk '{print $6}');
+		#echo "DFU Flash is Disabled"
 	fi
 	# Check For USB Serials
 	if [ -d /dev/serial/by-id/ ]; then
@@ -320,13 +308,13 @@ flashFirmware(){
 			unset options i
 			while IFS= read -r -d $'\0' f; do
 			  options[i++]="$f"
-			done < <(find $DIRECTORY -maxdepth 1 -type f \( -name '*1m*' -o -name 'usb.bin' \) -print0)
+			done < <(find $DIRECTORY -maxdepth 1 -type f \( -name '1m.bin' \) -print0)
 		elif [[ $bitrate == "500000" ]]; then
 			DIRECTORY=.
 			unset options i
 			while IFS= read -r -d $'\0' f; do
 			  options[i++]="$f"
-			done < <(find $DIRECTORY -maxdepth 1 -type f \( -name 'usb.bin' -o -name '500k.bin' \) -print0)
+			done < <(find $DIRECTORY -maxdepth 1 -type f \( -name '500k.bin' \) -print0)
 		fi
 		COLUMNS=12
 		select opt in "${options[@]}" "Back"; do
@@ -354,7 +342,7 @@ flashFirmware(){
 		declare -A arr
 		while IFS= read -r -d $'\0' f; do
 		  options[i++]="$f"
-		done < <(find $DIRECTORY -maxdepth 1 -type f -name "*.bin" -print0)
+		done < <(find $DIRECTORY -maxdepth 1 -type f  \( -name 'katapult_and_carto_can_1m_beta.bin' \)  -print0)
 		COLUMNS=12
 		select opt in "${options[@]}" "Back"; do
 			case $opt in
@@ -380,7 +368,7 @@ flashFirmware(){
 		unset options i
 		while IFS= read -r -d $'\0' f; do
 		  options[i++]="$f"
-		done < <(find $DIRECTORY -maxdepth 1 -type f -name "*.bin" -print0 )
+		done < <(find $DIRECTORY -maxdepth 1 -type f -name "usb.bin" -print0 )
 		COLUMNS=12
 		select opt in "${options[@]}" "Back"; do
 			case $opt in
@@ -412,43 +400,52 @@ flashing(){
 	if [[ $katapultID != "" ]]; then
 		uuid=$katapultID
 	fi
-	echo "FLASHED with $firmwareFile"
 	
-	# Check if Katapult
-	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
-		# Flash Katapult Firmware
-		python3 ~/katapult/scripts/flash_can.py -i can0 -f $firmwareFile -u $uuid;
-		canbootID=""
-		katapultID=""
-		echo
-	fi
-	
-	# Check if DFU
-	if [[ $dfuID != "" ]]; then
-		# Flash DFU Firmware
-		sudo dfu-util -R -a 0 -s 0x08000000:leave -D $firmwareFile
-		dfuID=""
-		echo
-	fi
-	
-	# Check if USB
-	if [[ $usbID != "" ]]; then
-		# FLash USB Firmware
-		cd ~/klipper/scripts
-		~/klippy-env/bin/python -c 'import flash_usb as u; u.enter_bootloader("/dev/serial/by-id/${usbID}")'
-		flashID=$(ls -l /dev/serial/by-id/ | grep "katapult" | awk '{print $9}');
-		if [ -d ~/Carto_TAP/FW/V2-V3 ]; then
-			cd ~/Carto_TAP/FW/V2-V3
-		else
-			echo "You are missing firmware files. Please pull them from github first."
-			break ;
+	if [[ $firmwareFile != "" ]]; then
+		echo "Flashing Device $uuid $dfuID $usbID"
+		echo "FLASHED with $firmwareFile"
+		
+		# Check if Katapult
+		if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
+			# Flash Katapult Firmware
+			python3 ~/katapult/scripts/flash_can.py -i can0 -f $firmwareFile -u $uuid;
+			canbootID=""
+			katapultID=""
+			echo
 		fi
-		~/klippy-env/bin/python ~/klipper/lib/canboot/flash_can.py -f $firmwareFile -d /dev/serial/by-id/$flashID
-		usbID=""
+		
+		# Check if DFU
+		if [[ $dfuID != "" ]]; then
+			# Flash DFU Firmware
+			sudo dfu-util --device ,$dfuID -R -a 0 -s 0x08000000:leave -D $firmwareFile
+			dfuID=""
+			echo
+		fi
+		
+		# Check if USB
+		if [[ $usbID != "" ]]; then
+			# FLash USB Firmware
+			cd ~/klipper/scripts
+			~/klippy-env/bin/python -c 'import flash_usb as u; u.enter_bootloader("/dev/serial/by-id/${usbID}")'
+			flashID=$(ls -l /dev/serial/by-id/ | grep "katapult" | awk '{print $9}');
+			if [ -d ~/Carto_TAP/FW/V2-V3 ]; then
+				cd ~/Carto_TAP/FW/V2-V3
+			else
+				echo "You are missing firmware files. Please pull them from github first."
+				break ;
+			fi
+			~/klippy-env/bin/python ~/klipper/lib/canboot/flash_can.py -f $firmwareFile -d /dev/serial/by-id/$flashID
+			usbID=""
+		fi
+		flashed="1"
+		read -p "Press enter to continue"
+		menu;
+	else
+		echo "Firmware file not found to be flashed"
+		flashed="0"
+		read -p "Press enter to continue"
+		menu;
 	fi
-	flashed="1"
-	read -p "Press enter to continue"
-	menu;
 }
 
 disclaimer;

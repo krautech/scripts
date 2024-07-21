@@ -8,14 +8,14 @@ NC='\033[0m' # No Color
 ### Credit to Esoterical (https://github.com/Esoterical)
 ### I used inspiration and snippet from his debugging script
 ### Thanks
-sudo service klipper stop
+systemctl stop klipper
 
 
 ##
 # Color  Variables
 ##
-red='\e\r[31m'
-green='\e\r[32m'
+red='\r\033[31m'
+green='\r\033[32m'
 blue='\r\033[1;36m'
 yellow='\r\033[1;33m'
 clear='\e[0m'
@@ -48,7 +48,7 @@ printf "${GREEN}
                                        |___/                 |_|                          
 
 ${NC}"
-printf "${RED}Firmware Flasher Script ${NC} v0.1.2\n"
+printf "${RED}Firmware Flasher Script ${NC} v0.1.4\n"
 printf "Created by ${GREEN}KrauTech${NC} ${BLUE}(https://github.com/krautech)${NC}\n"
 echo
 echo
@@ -100,17 +100,11 @@ menu(){
 	
 	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]] || [[ $dfuID != "" ]] || [[ $usbID != "" ]]; then
 		echo -ne "
-			$(ColorBlue '4)') Flash Firmware "
+			$(ColorBlue '4)') Flash Firmware"
 	fi
-	if [[ $flashed == "1" ]]; then
-		echo -ne "\n
-			$(ColorRed 'R)') Reboot & Exit"
-		echo -ne "\n
-			$(ColorRed 'Q)') Exit without Rebooting"
-	else
-		echo -ne "\n
-			$(ColorRed 'Q)') Exit"
-	fi
+	echo -ne "\n	
+		$(ColorRed 'R)') Reboot
+		$(ColorRed 'Q)') Exit without Rebooting\n"
 	echo -ne "\n	
 		$(ColorBlue 'Choose an option:') "
     read a
@@ -121,15 +115,8 @@ menu(){
 	    3) checkUUID ; menu ;;
 		4) flashFirmware ; menu ;;
 	    5) all_checks ; menu ;;
-		"q") sudo service klipper start; exit; 0 ;;
-		"r") 
-		if [[ $flashed == "1" ]]; then
-			reboot; exit;
-		else
-			sudo service klipper start;
-			exit;
-		fi
-		exit ;;
+		"r") systemctl start klipper; exit;;
+		"q") reboot; exit;;
 		*) echo -e $red"Wrong option."$clear;;
     esac
 }
@@ -338,44 +325,52 @@ flashing(){
 	if [[ $katapultID != "" ]]; then
 		uuid=$katapultID
 	fi
-	echo "FLASHED with $firmwareFile"
+	if [[ $firmwareFile != "" ]]; then
+		echo "Flashing Device $uuid $dfuID $usbID"
+		echo "FLASHED with $firmwareFile"
 	
-	# Check if Katapult
-	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
-		# Flash Katapult Firmware
-		python3 ~/katapult/scripts/flash_can.py -i can0 -f $firmwareFile -u $uuid;
-		canbootID=""
-		katapultID=""
-		echo
-	fi
-	
-	# Check if DFU
-	if [[ $dfuID != "" ]]; then
-		# Flash DFU Firmware
-		cd ~/cartographer-klipper/firmware/v3/'DEPLOYER FRIMWARE - DFU MODE ONLY NOT KATAPULT'
-		sudo dfu-util -R -a 0 -s 0x08000000:leave -D $firmwareFile
-		dfuID=""
-		echo
-	fi
-	
-	# Check if USB
-	if [[ $usbID != "" ]]; then
-		# FLash USB Firmware
-		cd ~/klipper/scripts
-		~/klippy-env/bin/python -c 'import flash_usb as u; u.enter_bootloader("/dev/serial/by-id/${usbID}")'
-		flashID=$(ls -l /dev/serial/by-id/ | grep "katapult" | awk '{print $9}');
-		if [ -d ~/cartographer-klipper/firmware/v3 ]; then
-			cd ~/cartographer-klipper/firmware/v3
-		else
-			echo "You are missing firmware files. Please pull them from github first."
-			break ;
+		# Check if Katapult
+		if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
+			# Flash Katapult Firmware
+			python3 ~/katapult/scripts/flash_can.py -i can0 -f $firmwareFile -u $uuid;
+			canbootID=""
+			katapultID=""
+			echo
 		fi
-		~/klippy-env/bin/python ~/klipper/lib/canboot/flash_can.py -f $firmwareFile -d /dev/serial/by-id/$flashID
-		usbID=""
+		
+		# Check if DFU
+		if [[ $dfuID != "" ]]; then
+			# Flash DFU Firmware
+			cd ~/cartographer-klipper/firmware/v3/'DEPLOYER FRIMWARE - DFU MODE ONLY NOT KATAPULT'
+			sudo dfu-util --device ,$dfuID -R -a 0 -s 0x08000000:leave -D $firmwareFile
+			dfuID=""
+			echo
+		fi
+		
+		# Check if USB
+		if [[ $usbID != "" ]]; then
+			# FLash USB Firmware
+			cd ~/klipper/scripts
+			~/klippy-env/bin/python -c 'import flash_usb as u; u.enter_bootloader("/dev/serial/by-id/${usbID}")'
+			flashID=$(ls -l /dev/serial/by-id/ | grep "katapult" | awk '{print $9}');
+			if [ -d ~/cartographer-klipper/firmware/v3 ]; then
+				cd ~/cartographer-klipper/firmware/v3
+			else
+				echo "You are missing firmware files. Please pull them from github first."
+				break ;
+			fi
+			~/klippy-env/bin/python ~/klipper/lib/canboot/flash_can.py -f $firmwareFile -d /dev/serial/by-id/$flashID
+			usbID=""
+		fi
+		flashed="1"
+		read -p "Press enter to continue"
+		menu;
+	else
+		echo "Firmware file not found to be flashed"
+		flashed="0"
+		read -p "Press enter to continue"
+		menu;
 	fi
-	flashed="1"
-	read -p "Press enter to continue"
-	menu;
 }
 
 disclaimer;

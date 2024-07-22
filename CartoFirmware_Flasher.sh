@@ -48,7 +48,7 @@ printf "${GREEN}
                                        |___/                 |_|                          
 
 ${NC}"
-printf "${RED}Firmware Flasher Script ${NC} v0.1.4\n"
+printf "${RED}Firmware Flasher Script ${NC} v0.1.5\n"
 printf "Created by ${GREEN}KrauTech${NC} ${BLUE}(https://github.com/krautech)${NC}\n"
 echo
 echo
@@ -84,6 +84,11 @@ disclaimer() {
 menu(){
 	# Show the Main Menu FUNCTION
 	header;
+	if [[ $findUUID != "" ]]; then
+		echo -ne "$(ColorBlue 'Cartographer UUID detected: ')"
+		echo $findUUID
+		echo 
+	fi
 	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
 		echo -ne "$(ColorGreen 'Katapult Device Found for Flashing')\n"
 	fi
@@ -93,14 +98,25 @@ menu(){
 	if [[ $usbID != "" ]]; then
 		echo -ne "$(ColorGreen 'USB Device Found for Flashing')\n"
 	fi
+	if [[ $canbootID == "" ]] && [[ $katapultID == "" ]] && [[ $dfuID == "" ]] && [[ $usbID == "" ]]; then
+		echo -ne "$(ColorRed 'No Device Found in Flashing Mode')\n"
+	fi
+	if [ ! -d ~/katapult ] && [ ! -d ~/cartographer-klipper ]; then
 	echo -ne "
-			$(ColorYellow '1)') Install Prerequisites\n
-			$(ColorGreen '2)') Check For Flashable Devices
-			$(ColorGreen '3)') Check UUID & Enter Katapult Mode\n"
-	
-	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]] || [[ $dfuID != "" ]] || [[ $usbID != "" ]]; then
+			$(ColorYellow '1)') Install Prerequisites\n"
+	else
+		if [[ $findUUID == "" ]]; then
+			echo -ne "
+					$(ColorGreen '2)') Check For Flashable Devices"
+			fi
+		if [[ $checkuuid == "" ]]; then
 		echo -ne "
-			$(ColorBlue '4)') Flash Firmware"
+				$(ColorGreen '3)') Check UUID And Or Enter Katapult Mode\n"
+		fi
+		if [[ $canbootID != "" ]] || [[ $katapultID != "" ]] || [[ $dfuID != "" ]] || [[ $usbID != "" ]]; then
+			echo -ne "
+				$(ColorBlue '4)') Flash Firmware"
+		fi
 	fi
 	echo -ne "\n	
 		$(ColorRed 'R)') Reboot
@@ -126,19 +142,32 @@ initialChecks(){
 	header;
 	echo "Running Checks for Cartographer Devices in Katapult Mode, DFU or USB"
 	echo 
-	# Check for canboot device
-	canbootCheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep "CanBoot")
-	if [[ $canbootCheck != "" ]]; then
-		# Save CanBoot Device UUID
-		canbootID=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=\K.*" | sed -e 's/, Application: CanBoot//g')
-		klippercheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=${canbootID}, Application: Klipper")
-	fi	
-	# Check for Katapult device
-	katapultCheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep "Katapult")
-	if [[ $katapultCheck != "" ]]; then
-		# Save Katapult Device UUID
-		katapultID=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=\K.*" | sed -e 's/, Application: Katapult//g')
-		klippercheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=${katapultID}, Application: Klipper")
+	if [ -d ~/katapult ]; then
+		cd ~/katapult
+		git pull > /dev/null 2>&1
+		findUUID=$(grep -E "\[scanner\]" ~/printer_data/config/printer.cfg -A 3 | grep uuid | awk '{print $2}')
+		if [[ $findUUID == "" ]]; then
+			findUUID=$(grep -E "\[cartographer\]" ~/printer_data/config/printer.cfg -A 3 | grep uuid | awk '{print $2}')
+			if [[ $findUUID != "" ]]; then
+				checkuuid=$(python3 ~/katapult/scripts/flashtool.py -i can0 -u $findUUID -r | grep -s "Flash Success")
+				fi 
+		else
+			checkuuid=$(python3 ~/katapult/scripts/flashtool.py -i can0 -u $findUUID -r | grep -s "Flash Success")
+		fi
+		# Check for canboot device
+		canbootCheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep "CanBoot")
+		if [[ $canbootCheck != "" ]]; then
+			# Save CanBoot Device UUID
+			canbootID=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=\K.*" | sed -e 's/, Application: CanBoot//g')
+			klippercheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=${canbootID}, Application: Klipper")
+		fi	
+		# Check for Katapult device
+		katapultCheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep "Katapult")
+		if [[ $katapultCheck != "" ]]; then
+			# Save Katapult Device UUID
+			katapultID=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=\K.*" | sed -e 's/, Application: Katapult//g')
+			klippercheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=${katapultID}, Application: Klipper")
+		fi
 	fi
 	# Check for Device in DFU Mode Instead
 	dfuCheck=$(lsusb | grep -oP "DFU Mode")
@@ -197,28 +226,31 @@ installPre(){
 	read -p "Press enter to continue"
 }
 checkUUID(){
-	# Checks Users UUID and Put Device into Katapult Mode
-	header;
-	echo "Please enter your cartographer UUID"
-	echo "found usually in your printer.cfg under [cartographer] or [scanner]"
-	echo 
-	echo "To go back: b"
-	echo
-	echo -n "UUID: "
-	read -r uuid
-	
-	# If user entered a valid UUID
-	if ! [[ $uuid == "b" ]]; then
-		# Check If UUID is valid and puts device into Katapult Mode
-		checkuuid=$(python3 ~/katapult/scripts/flashtool.py -i can0 -u $uuid -r | grep -s "Flash Success")
-		if [[ $checkuuid == "Flash Success" ]]; then
-			printf "UUID Check: ${GREEN}Success & Entered Katapult Mode${NC}\n"
-			read -p "Press enter to check for flashable device"
-			initialChecks;
-			##echo "DEBUG CHECK UUID:"$checkuuid
-		else
-			echo "UUID Check Failed: ${checkuuid}"
-			read -p "Press enter to go back"
+	if [[ $checkuuid == "" ]]; then
+		# Checks Users UUID and Put Device into Katapult Mode
+		header;
+		echo "Please enter your cartographer UUID"
+		echo "found usually in your printer.cfg under [cartographer] or [scanner]"
+		echo 
+		echo "To go back: b"
+		echo
+		echo -n "UUID: "
+		read -p "" -i $findUUID -e uuid		
+		# If user entered a valid UUID
+		if ! [[ $uuid == "b" ]]; then
+			cd ~/katapult
+			git pull > /dev/null 2>&1
+			# Check If UUID is valid and puts device into Katapult Mode
+			checkuuid=$(python3 ~/katapult/scripts/flashtool.py -i can0 -u $uuid -r | grep -s "Flash Success")
+			if [[ $checkuuid == "Flash Success" ]]; then
+				printf "UUID Check: ${GREEN}Success & Entered Katapult Mode${NC}\n"
+				read -p "Press enter to check for flashable device"
+				initialChecks;
+				##echo "DEBUG CHECK UUID:"$checkuuid
+			else
+				echo "UUID Check Failed: ${checkuuid}"
+				read -p "Press enter to go back"
+			fi
 		fi
 	fi
 }

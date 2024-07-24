@@ -193,10 +193,11 @@ initialChecks(){
 	if [ -d ~/katapult ]; then
 		cd ~/katapult
 		git pull > /dev/null 2>&1
-		if [[ $(ip -s -d link show can0 | grep -oP "does not exist") ]]; then
-			findUUID=$(grep -E "\[scanner\]" ~/printer_data/logs/klippy.log -A 3 | grep uuid | awk '{print $2}')
+		canCheck=$(ip -s -d link | grep "can0")
+		if [[ $canCheck != "" ]]; then
+			findUUID=$(grep -E "\[scanner\]" ~/printer_data/logs/klippy.log -A 3 | grep uuid | tail -1 | awk '{print $3}')
 			if [[ $findUUID == "" ]]; then
-				findUUID=$(grep -E "\[cartographer\]" ~/printer_data/logs/klippy.log -A 3 | grep uuid | awk '{print $2}')
+				findUUID=$(grep -E "\[cartographer\]" ~/printer_data/logs/klippy.log -A 3| grep uuid | tail -1 | awk '{print $3}')
 				if [[ $findUUID != "" ]]; then
 					checkuuid=$(python3 ~/katapult/scripts/flashtool.py -i can0 -u $findUUID -r | grep -s "Flash Success")
 					fi 
@@ -204,19 +205,19 @@ initialChecks(){
 				checkuuid=$(python3 ~/katapult/scripts/flashtool.py -i can0 -u $findUUID -r | grep -s "Flash Success")
 			fi
 			# Check for canboot device
-			canbootCheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep "CanBoot")
+			canbootCheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep  -m 1 "CanBoot")
 			if [[ $canbootCheck != "" ]]; then
 				# Save CanBoot Device UUID
-				canbootID=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=\K.*" | sed -e 's/, Application: CanBoot//g')
-				klippercheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=${canbootID}, Application: Klipper")
+				canbootID=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -m 1 -oP "canbus_uuid=\K.*" | sed -e 's/, Application: CanBoot//g')
+				klippercheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep  -m 1 -oP "canbus_uuid=${canbootID}, Application: Klipper")
 				found=1
 			fi	
 			# Check for Canbus Katapult device
-			katapultCheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep "Katapult")
+			katapultCheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep  -m 1 "Katapult")
 			if [[ $katapultCheck != "" ]]; then
 				# Save Katapult Device UUID
-				katapultID=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=\K.*" | sed -e 's/, Application: Katapult//g')
-				klippercheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=${katapultID}, Application: Klipper")
+				katapultID=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -m 1 -oP "canbus_uuid=\K.*" | sed -e 's/, Application: Katapult//g')
+				klippercheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep  -m 1 -oP "canbus_uuid=${katapultID}, Application: Klipper")
 				found=1
 			fi
 		fi

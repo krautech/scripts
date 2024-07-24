@@ -8,7 +8,7 @@ NC='\033[0m' # No Color
 ### Credit to Esoterical (https://github.com/Esoterical)
 ### I used inspiration and snippet from his debugging script
 ### Thanks
-systemctl stop klipper
+sudo service klipper stop
 
 
 ##
@@ -48,7 +48,7 @@ printf "${GREEN}
                                        |___/                 |_|                          
 
 ${NC}"
-printf "${RED}Firmware Flasher Script ${NC} v0.1.5\n"
+printf "${RED}Firmware Flasher Script ${NC} v0.1.6a\n"
 printf "Created by ${GREEN}KrauTech${NC} ${BLUE}(https://github.com/krautech)${NC}\n"
 echo
 echo
@@ -81,58 +81,106 @@ disclaimer() {
 	done
 }
 
+instructions() {
+	# Show Instructions FUNCTION
+	echo "******************************************************************"	
+	printf "${GREEN}Flashing via Katapult - Canbus${NC}\n"
+	echo "******************************************************************"	
+	echo "Step 1: Plug Cartographer into Canbus cable to host/toolhead."
+	echo "Step 2: Press 2 to install pre-requisites."
+	echo "Step 3: Canbus should be detected, if not, enter your cartographer UUID."
+	echo "Step 4: Press 6 to flash classic firmware (1M or 500k bitrate, auto selected) to Cartographer."
+	echo "Step 3: Cycle printer power."
+	echo "******************************************************************"	
+	printf "${GREEN}Flashing via Katapult - USB${NC}\n"
+	echo "******************************************************************"	
+	echo "Step 1: Plug Cartographer into USB to host/toolhead."
+	echo "Step 2: Press 2 to install pre-requisites."
+	echo "Step 3: Cartographer should be detected. If not, Press 3 to check."
+	echo "Step 4: Press 6 to flash USB firmware to Cartographer."
+	echo "Step 3: Cycle printer power."
+	echo "******************************************************************"
+	printf "${GREEN}Flashing via DFU${NC}\n"
+	echo "******************************************************************"
+	echo "Step 1: Plug Cartographer in via USB to host."
+	echo "Step 2: Tap 'Boot0' on your cartographer to enter DFU."
+	echo " - Sometimes holding 'Boot0' and tapping 'reset' is required"
+	printf " - Type ${RED}lsusb${NC} until your device shows in DFU mode.\n"
+	echo "Step 3: Press 2 to install pre-requisites."
+	echo "Step 4: Press 4 to check for flashable devices."
+	echo "Step 5: Press 6 to flash firmware via DFU."
+	echo "Step 6: Cycle printer power"
+	echo 
+	echo 
+	read -p "Press enter to return to main menu"
+}
+
+
 menu(){
 	# Show the Main Menu FUNCTION
 	header;
 	if [[ $findUUID != "" ]]; then
-		echo -ne "$(ColorBlue 'Cartographer UUID detected: ')"
+		echo -ne "$(ColorBlue 'Cartographer Canbus UUID detected: ')"
 		echo $findUUID
 		echo 
 	fi
 	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
-		echo -ne "$(ColorGreen 'Katapult Device Found for Flashing')\n"
+		echo -ne "$(ColorGreen 'Canbus Katapult Device Found for Flashing')\n"
 	fi
 	if [[ $dfuID != "" ]]; then
 		echo -ne "$(ColorGreen 'DFU Device Found for Flashing')\n"
 	fi
 	if [[ $usbID != "" ]]; then
-		echo -ne "$(ColorGreen 'USB Device Found for Flashing')\n"
+		echo -ne "$(ColorGreen 'USB Katapult Device Found for Flashing')\n"
 	fi
 	if [[ $canbootID == "" ]] && [[ $katapultID == "" ]] && [[ $dfuID == "" ]] && [[ $usbID == "" ]]; then
 		echo -ne "$(ColorRed 'No Device Found in Flashing Mode')\n"
 	fi
-	if [ ! -d ~/katapult ] && [ ! -d ~/cartographer-klipper ]; then
 	echo -ne "
-			$(ColorYellow '1)') Install Prerequisites\n"
+					$(ColorYellow '1)') Instructions"
+	if [ ! -d ~/katapult ] && [ ! -d ~/Carto_TAP ] && ! grep -q "CartographerSurveyBeta" ~/printer_data/config/moonraker.conf; then
+	echo -ne "
+			$(ColorYellow '2)') Install Prerequisites\n"
 	else
-		if [[ $findUUID == "" ]]; then
+		if [[ $found == "" ]]; then
 			echo -ne "
-					$(ColorGreen '2)') Check For Flashable Devices"
-			fi
-		if [[ $checkuuid == "" ]]; then
+					$(ColorGreen '3)') Run lsusb"
+		fi
+		if [[ $found == "" ]]; then
+			echo -ne "
+					$(ColorGreen '4)') Check For Flashable Devices"
+		fi
+		
+		if [[ $checkuuid == "" ]] && [[ $usbID == "" ]] && [[ $dfuID == "" ]]; then
 		echo -ne "
-				$(ColorGreen '3)') Check UUID And Or Enter Katapult Mode\n"
+				$(ColorGreen '5)') Check Canbus UUID And Or Enter Canbus Katapult Mode\n"
 		fi
 		if [[ $canbootID != "" ]] || [[ $katapultID != "" ]] || [[ $dfuID != "" ]] || [[ $usbID != "" ]]; then
 			echo -ne "
-				$(ColorBlue '4)') Flash Firmware"
+				$(ColorBlue '6)') Flash Firmware"
 		fi
 	fi
 	echo -ne "\n	
-		$(ColorRed 'R)') Reboot
-		$(ColorRed 'Q)') Exit without Rebooting\n"
+		$(ColorRed 'r)') Reboot
+		$(ColorRed 'q)') Exit without Rebooting\n"
 	echo -ne "\n	
 		$(ColorBlue 'Choose an option:') "
     read a
 	COLUMNS=12
     case $a in
-	    1) installPre ; menu ;;
-	    2) initialChecks ; menu ;;
-	    3) checkUUID ; menu ;;
-		4) flashFirmware ; menu ;;
-	    5) all_checks ; menu ;;
-		"r") systemctl start klipper; exit;;
-		"q") reboot; exit;;
+		1) instructions ; menu ;;
+	    2) installPre ; menu ;;
+		3) 
+		lsusb
+		read -p "Press enter to return to main menu"; menu ;;
+	    4) initialChecks ; menu ;;
+	    5) checkUUID ; menu ;;
+		6) flashFirmware ; menu ;;
+		"lsusb") 
+		lsusb
+		read -p "Press enter to return to main menu"; menu ;;
+		"q") sudo service klipper start; exit;;
+		"r") sudo reboot; exit;;
 		*) echo -e $red"Wrong option."$clear;;
     esac
 }
@@ -140,33 +188,37 @@ menu(){
 initialChecks(){
 	# Begin Checking For Devices FUNCTION
 	header;
-	echo "Running Checks for Cartographer Devices in Katapult Mode, DFU or USB"
+	echo "Running Checks for Cartographer Devices in Katapult Mode (Canbus & USB) or DFU"
 	echo 
 	if [ -d ~/katapult ]; then
 		cd ~/katapult
 		git pull > /dev/null 2>&1
-		findUUID=$(grep -E "\[scanner\]" ~/printer_data/config/printer.cfg -A 3 | grep uuid | awk '{print $2}')
-		if [[ $findUUID == "" ]]; then
-			findUUID=$(grep -E "\[cartographer\]" ~/printer_data/config/printer.cfg -A 3 | grep uuid | awk '{print $2}')
-			if [[ $findUUID != "" ]]; then
+		if [[ $(ip -s -d link show can0 | grep -oP "does not exist") ]]; then
+			findUUID=$(grep -E "\[scanner\]" ~/printer_data/logs/klippy.log -A 3 | grep uuid | awk '{print $2}')
+			if [[ $findUUID == "" ]]; then
+				findUUID=$(grep -E "\[cartographer\]" ~/printer_data/logs/klippy.log -A 3 | grep uuid | awk '{print $2}')
+				if [[ $findUUID != "" ]]; then
+					checkuuid=$(python3 ~/katapult/scripts/flashtool.py -i can0 -u $findUUID -r | grep -s "Flash Success")
+					fi 
+			else
 				checkuuid=$(python3 ~/katapult/scripts/flashtool.py -i can0 -u $findUUID -r | grep -s "Flash Success")
-				fi 
-		else
-			checkuuid=$(python3 ~/katapult/scripts/flashtool.py -i can0 -u $findUUID -r | grep -s "Flash Success")
-		fi
-		# Check for canboot device
-		canbootCheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep "CanBoot")
-		if [[ $canbootCheck != "" ]]; then
-			# Save CanBoot Device UUID
-			canbootID=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=\K.*" | sed -e 's/, Application: CanBoot//g')
-			klippercheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=${canbootID}, Application: Klipper")
-		fi	
-		# Check for Katapult device
-		katapultCheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep "Katapult")
-		if [[ $katapultCheck != "" ]]; then
-			# Save Katapult Device UUID
-			katapultID=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=\K.*" | sed -e 's/, Application: Katapult//g')
-			klippercheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=${katapultID}, Application: Klipper")
+			fi
+			# Check for canboot device
+			canbootCheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep "CanBoot")
+			if [[ $canbootCheck != "" ]]; then
+				# Save CanBoot Device UUID
+				canbootID=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=\K.*" | sed -e 's/, Application: CanBoot//g')
+				klippercheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=${canbootID}, Application: Klipper")
+				found=1
+			fi	
+			# Check for Canbus Katapult device
+			katapultCheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep "Katapult")
+			if [[ $katapultCheck != "" ]]; then
+				# Save Katapult Device UUID
+				katapultID=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=\K.*" | sed -e 's/, Application: Katapult//g')
+				klippercheck=$(~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0 | grep -oP "canbus_uuid=${katapultID}, Application: Klipper")
+				found=1
+			fi
 		fi
 	fi
 	# Check for Device in DFU Mode Instead
@@ -174,14 +226,17 @@ initialChecks(){
 	if [[ $dfuCheck == "DFU Mode" ]]; then
 		# Save DFU Device ID
 		dfuID=$(lsusb | grep "DFU Mode" | awk '{print $6}');
+		found=1
+		#echo "DFU Flash is Disabled"
 	fi
-	# Check For USB Serials
+	# Check For Katapult USB Serials
 	if [ -d /dev/serial/by-id/ ]; then
 		# Check for Cartographer USB
 		usbCheck=$(ls -l /dev/serial/by-id/ | grep -oP "Cartographer")
 			if [[ $usbCheck == "Cartographer" ]]; then
 				# Save USB ID
 				usbID=$(ls -l /dev/serial/by-id/ | grep "Cartographer" | awk '{print $9}');
+				found=1
 			fi
 	fi
 
@@ -229,7 +284,9 @@ checkUUID(){
 	if [[ $checkuuid == "" ]]; then
 		# Checks Users UUID and Put Device into Katapult Mode
 		header;
-		echo "Please enter your cartographer UUID"
+		echo "This is only needed if youre using CANBUS"
+		echo 
+		echo "Please enter your cartographer canbus UUID"
 		echo "found usually in your printer.cfg under [cartographer] or [scanner]"
 		echo 
 		echo "To go back: b"
@@ -260,12 +317,12 @@ flashFirmware(){
 	header;
 	echo "Pick which firmware you want to install, if unsure ask on discord (https://discord.gg/yzazQMEGS2)"
 	echo
-	bitrate=$(ip -s -d link show can0 | grep -oP 'bitrate\s\K\w+')
-	printf "Your Host CANBus is configured at ${RED}Bitrate: $bitrate"
-	echo 
 	# If found device is Katapult
 	if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then
-		printf "${BLUE}Flashing via ${GREEN}KATAPULT${NC}\n\n"
+		bitrate=$(ip -s -d link show can0 | grep -oP 'bitrate\s\K\w+')
+		printf "Your Host CANBus is configured at ${RED}Bitrate: $bitrate"
+		echo 
+		printf "${BLUE}Flashing via ${GREEN}CANBUS - KATAPULT${NC}\n\n"
 		cd ~/cartographer-klipper
 		git pull > /dev/null 2>&1
 		cd ~/cartographer-klipper/firmware/v3
@@ -317,7 +374,7 @@ flashFirmware(){
 	fi
 	# If found device is USB
 	if [[ $usbID != "" ]]; then
-		printf "${BLUE}Flashing via ${GREEN}USB${NC}\n\n"
+		printf "${BLUE}Flashing via ${GREEN}USB - KATAPULT${NC}\n\n"
 		cd ~/cartographer-klipper
 		git pull > /dev/null 2>&1
 		cd ~/cartographer-klipper/firmware/v3
@@ -359,7 +416,7 @@ flashing(){
 	fi
 	if [[ $firmwareFile != "" ]]; then
 		echo "Flashing Device $uuid $dfuID $usbID"
-		echo "FLASHED with $firmwareFile"
+		echo "Flashing with $firmwareFile ..."
 	
 		# Check if Katapult
 		if [[ $canbootID != "" ]] || [[ $katapultID != "" ]]; then

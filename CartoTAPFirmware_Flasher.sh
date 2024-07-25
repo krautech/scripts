@@ -46,7 +46,7 @@ printf "${BLUE}
 																								   
 
 ${NC}"
-printf "${RED}Beta Firmware Flasher Script ${NC} v0.1.6a\n"
+printf "${RED}Beta Firmware Flasher Script ${NC} v0.1.7\n"
 printf "Created by ${GREEN}KrauTech${NC} ${BLUE}(https://github.com/krautech)${NC}\n"
 echo
 echo
@@ -135,7 +135,7 @@ menu(){
 	fi
 	echo -ne "
 					$(ColorYellow '1)') Instructions"
-	if [ ! -d ~/katapult ] && [ ! -d ~/Carto_TAP ] && ! grep -q "CartographerSurveyBeta" ~/printer_data/config/moonraker.conf; then
+	if [ ! -d ~/katapult ] || [ ! -d ~/Carto_TAP ] || ! grep -q "CartographerSurveyBeta" ~/printer_data/config/moonraker.conf; then
 	echo -ne "
 			$(ColorYellow '2)') Install Prerequisites\n"
 	else
@@ -238,7 +238,10 @@ initialChecks(){
 		usbCheck=$(ls -l /dev/serial/by-id/ | grep -oP "Cartographer")
 			if [[ $usbCheck == "Cartographer" ]]; then
 				# Save USB ID
-				usbID=$(ls -l /dev/serial/by-id/ | grep "Cartographer" | awk '{print $9}');
+				cartoID=$(ls -l /dev/serial/by-id/ | grep "Cartographer" | awk '{print $9}');
+				cd ~/klipper/scripts
+				~/klippy-env/bin/python -c 'import flash_usb as u; u.enter_bootloader("/dev/serial/by-id/${cartoID}")'
+				usbID=$(ls -l /dev/serial/by-id/ | grep "katapult" | awk '{print $9}');
 				found=1
 			fi
 	fi
@@ -519,9 +522,6 @@ flashing(){
 		# Check if USB
 		if [[ $usbID != "" ]]; then
 			# FLash USB Firmware
-			cd ~/klipper/scripts
-			~/klippy-env/bin/python -c 'import flash_usb as u; u.enter_bootloader("/dev/serial/by-id/${usbID}")'
-			flashID=$(ls -l /dev/serial/by-id/ | grep "katapult" | awk '{print $9}');
 			if [ -d ~/Carto_TAP/FW/V2-V3 ]; then
 				cd ~/Carto_TAP/FW/V2-V3
 			else

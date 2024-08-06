@@ -57,7 +57,7 @@ printf "${BLUE}
 																								   
 
 ${NC}"
-printf "${RED}Beta Firmware Flasher Script ${NC} v0.1.7\n"
+printf "${RED}Beta Firmware Flasher Script ${NC} v0.1.8\n"
 printf "Created by ${GREEN}KrauTech${NC} ${BLUE}(https://github.com/krautech)${NC}\n"
 echo
 echo

@@ -8,9 +8,20 @@ NC='\033[0m' # No Color
 ### Credit to Esoterical (https://github.com/Esoterical)
 ### I used inspiration and snippet from his debugging script
 ### Thanks
-sudo service klipper stop
-
-
+if systemctl is-active --quiet "klipper.service" ; then
+	result=$(curl 127.0.0.1:7125/printer/objects/query?print_stats)
+	if grep -q "'state': 'printing'" <<< $result; then
+		echo "Printer is NOT IDLE. Please stop or finish whatever youre doing before running this script."
+		exit;
+	else
+		if grep -q "'state': 'paused'" <<< $result; then
+			echo "Printer is NOT IDLE. Please stop or finish whatever youre doing before running this script."
+			exit;
+		fi
+	fi
+else
+	sudo service klipper stop
+fi
 ##
 # Color  Variables
 ##
@@ -439,7 +450,8 @@ flashFirmware(){
 		declare -A arr
 		while IFS= read -r -d $'\0' f; do
 		  options[i++]="$f"
-		done < <(find $DIRECTORY -maxdepth 1 -type f  \( -name 'katapult_and_carto_can_1m_beta.bin' \)  -print0)
+		done < <(find $DIRECTORY -maxdepth 1 -type f \( -name 'katapult_and_carto_can_1m_beta.bin' -o -name 'usb.bin' \) -print0)
+		#done < <(find $DIRECTORY -maxdepth 1 -type f  \( -name 'katapult_and_carto_can_1m_beta.bin' \)  -print0)
 		COLUMNS=12
 		select opt in "${options[@]}" "Back"; do
 			case $opt in
